@@ -52,22 +52,23 @@ export function AnalysisDashboard({ onAnalyzeStart }: AnalysisDashboardProps) {
   };
   
   const handleAnalyzeClick = () => {
-    // Temporarily disabled video requirement for testing animation
-    // if (!videoFile) {
-    //   toast({
-    //     title: 'No video selected',
-    //     description: 'Please select a video file to analyze.',
-    //     variant: 'destructive',
-    //   });
-    //   return;
-    // }
+    if (!videoFile) {
+      toast({
+        title: 'No video selected',
+        description: 'Please select a video file to analyze.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     setError(null);
     
-    // Trigger hyperspace effect
-    onAnalyzeStart?.();
-
-    // Skip actual analysis for animation demo
+    // Show "Overthinking..." for 12 seconds, then trigger hyperspace effect
+    startTransition(async () => {
+      // 12 second delay to show "Overthinking..." text, then start hyperspace
+      await new Promise(resolve => setTimeout(resolve, 12000));
+      onAnalyzeStart?.();
+    });
   };
 
   const handleCardClick = (card: 'better' | 'worse') => {
@@ -104,7 +105,7 @@ export function AnalysisDashboard({ onAnalyzeStart }: AnalysisDashboardProps) {
             onChange={handleFileChange}
             className="hidden"
           />
-          <Button onClick={handleAnalyzeClick} disabled={isPending} className="w-full">
+          <Button onClick={handleAnalyzeClick} disabled={isPending || !videoFile} className="w-full">
             {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {isPending ? 'Overthinking...' : 'Analyze My Day'}
           </Button>
