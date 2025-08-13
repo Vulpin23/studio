@@ -1,12 +1,16 @@
 'use server';
 
 import { extractVideoDetails } from '@/ai/flows/extract-video-details';
-import { generateWittyAnalysis, GenerateWittyAnalysisOutput } from '@/ai/flows/generate-witty-analysis';
-import { generateOverthinkingScenarios, GenerateOverthinkingScenariosOutput } from '@/ai/flows/generate-overthinking-scenarios';
-import { generateVideoFromPrompt } from '@/ai/flows/generate-video-from-prompt';
+import { generateWittyAnalysis } from '@/ai/flows/generate-witty-analysis';
+import type { GenerateWittyAnalysisOutput } from '@/ai/flows/generate-witty-analysis';
+import { generateOverthinkingScenarios } from '@/ai/flows/generate-overthinking-scenarios';
+import type { GenerateOverthinkingScenariosOutput } from '@/ai/flows/generate-overthinking-scenarios';
+import { generateImageFromPrompt } from '@/ai/flows/generate-image-from-prompt';
 
 export interface FullAnalysis extends GenerateWittyAnalysisOutput {
   overthinkingScenarios: GenerateOverthinkingScenariosOutput;
+  wentWellImage: string;
+  couldHaveGoneBetterImage: string;
 }
 
 export async function getWittyAnalysisForVideo(videoDataUri: string): Promise<FullAnalysis> {
@@ -23,10 +27,17 @@ export async function getWittyAnalysisForVideo(videoDataUri: string): Promise<Fu
       generateWittyAnalysis({ eventDetails }),
       generateOverthinkingScenarios({ eventDetails }),
     ]);
+
+    const [wentWellImageResult, couldHaveGoneBetterImageResult] = await Promise.all([
+        generateImageFromPrompt({ prompt: analysis.wentWell.main, videoDataUri }),
+        generateImageFromPrompt({ prompt: analysis.couldHaveGoneBetter.main, videoDataUri })
+    ]);
     
     return {
       ...analysis,
-      overthinkingScenarios
+      overthinkingScenarios,
+      wentWellImage: wentWellImageResult.imageDataUri,
+      couldHaveGoneBetterImage: couldHaveGoneBetterImageResult.imageDataUri,
     };
   } catch (error) {
     console.error("Error getting witty analysis:", error);
@@ -37,15 +48,15 @@ export async function getWittyAnalysisForVideo(videoDataUri: string): Promise<Fu
   }
 }
 
-export async function generateScenarioVideo(prompt: string) {
+export async function generateScenarioImage(prompt: string, videoDataUri: string) {
   try {
-    const { videoDataUri } = await generateVideoFromPrompt({ prompt });
-    return videoDataUri;
+    const { imageDataUri } = await generateImageFromPrompt({ prompt, videoDataUri });
+    return imageDataUri;
   } catch (error) {
-    console.error("Error generating video:", error);
+    console.error("Error generating image:", error);
     if (error instanceof Error) {
-      throw new Error(`Failed to generate video: ${error.message}`);
+      throw new Error(`Failed to generate image: ${error.message}`);
     }
-    throw new Error('An unknown error occurred during video generation.');
+    throw new Error('An unknown error occurred during image generation.');
   }
 }

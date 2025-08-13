@@ -1,22 +1,22 @@
 'use client';
 
 import { useState, useTransition, useRef, useEffect } from 'react';
-import { Upload, Sparkles, Lock, Unlock, Loader2, Info, Film, Bot } from 'lucide-react';
+import { Upload, Sparkles, Lock, Unlock, Loader2, Info, Camera } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { getWittyAnalysisForVideo, generateScenarioVideo } from '@/app/actions';
+import { getWittyAnalysisForVideo, generateScenarioImage } from '@/app/actions';
 import type { FullAnalysis } from '@/app/actions';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 
-function OverthinkingCard({ scenario, onGenerate, generatedVideo, isGenerating }: {
+function OverthinkingCard({ scenario, onGenerate, generatedImage, isGenerating }: {
   scenario: string;
   onGenerate: () => void;
-  generatedVideo: string | null;
+  generatedImage: string | null;
   isGenerating: boolean;
 }) {
   return (
@@ -26,12 +26,12 @@ function OverthinkingCard({ scenario, onGenerate, generatedVideo, isGenerating }
       </CardHeader>
       <CardContent className="flex-grow flex flex-col gap-4">
         <p className="text-base flex-grow">{scenario}</p>
-        {generatedVideo ? (
-          <video src={generatedVideo} className="w-full aspect-video rounded-md" controls autoPlay loop />
+        {generatedImage ? (
+          <img src={generatedImage} className="w-full aspect-video object-cover rounded-md" alt="Generated scenario" />
         ) : (
           <Button onClick={onGenerate} disabled={isGenerating}>
-            {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Film className="mr-2 h-4 w-4" />}
-            {isGenerating ? 'Generating...' : 'Generate Video'}
+            {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Camera className="mr-2 h-4 w-4" />}
+            {isGenerating ? 'Generating...' : 'Generate Image'}
           </Button>
         )}
       </CardContent>
@@ -49,8 +49,9 @@ export function AnalysisDashboard() {
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const [generatingVideo, setGeneratingVideo] = useState<'scenario1' | 'scenario2' | null>(null);
-  const [generatedVideos, setGeneratedVideos] = useState<{scenario1: string | null; scenario2: string | null}>({ scenario1: null, scenario2: null });
+  const [generatingImage, setGeneratingImage] = useState<'scenario1' | 'scenario2' | null>(null);
+  const [generatedImages, setGeneratedImages] = useState<{scenario1: string | null; scenario2: string | null}>({ scenario1: null, scenario2: null });
+  const [videoDataUri, setVideoDataUri] = useState<string | null>(null);
 
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -71,8 +72,9 @@ export function AnalysisDashboard() {
     setError(null);
     setBetterViewed(false);
     setWorseViewed(false);
-    setGeneratedVideos({ scenario1: null, scenario2: null });
-    setGeneratingVideo(null);
+    setGeneratedImages({ scenario1: null, scenario2: null });
+    setGeneratingImage(null);
+    setVideoDataUri(null);
   }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,11 +84,17 @@ export function AnalysisDashboard() {
       resetState();
       const previewUrl = URL.createObjectURL(file);
       setVideoPreview(previewUrl);
+
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onloadend = () => {
+        setVideoDataUri(reader.result as string);
+      };
     }
   };
   
   const handleAnalyzeClick = () => {
-    if (!videoFile) {
+    if (!videoFile || !videoDataUri) {
       toast({
         title: 'No video selected',
         description: 'Please select a video file to analyze.',
@@ -96,29 +104,12 @@ export function AnalysisDashboard() {
     }
 
     resetState();
+    setVideoDataUri(videoDataUri); // re-set it because resetState clears it
 
     startTransition(async () => {
       try {
-        const reader = new FileReader();
-        reader.readAsDataURL(videoFile);
-        reader.onloadend = async () => {
-          const base64data = reader.result as string;
-          try {
-            const result = await getWittyAnalysisForVideo(base64data);
-            setAnalysis(result);
-          } catch(e) {
-             const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
-            setError(errorMessage);
-            toast({
-              title: 'Analysis Failed',
-              description: errorMessage,
-              variant: 'destructive',
-            });
-          }
-        };
-        reader.onerror = () => {
-          throw new Error('Failed to read video file.');
-        };
+        const result = await getWittyAnalysisForVideo(videoDataUri);
+        setAnalysis(result);
       } catch (e) {
         const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
         setError(errorMessage);
@@ -136,23 +127,23 @@ export function AnalysisDashboard() {
     if (card === 'worse') setWorseViewed(true);
   };
   
-  const handleGenerateVideo = (scenarioKey: 'scenario1' | 'scenario2') => {
-    if (!analysis) return;
+  const handleGenerateImage = (scenarioKey: 'scenario1' | 'scenario2') => {
+    if (!analysis || !videoDataUri) return;
     const prompt = analysis.overthinkingScenarios[scenarioKey];
-    setGeneratingVideo(scenarioKey);
+    setGeneratingImage(scenarioKey);
     startTransition(async () => {
       try {
-        const videoDataUri = await generateScenarioVideo(prompt);
-        setGeneratedVideos(prev => ({...prev, [scenarioKey]: videoDataUri}));
+        const imageDataUri = await generateScenarioImage(prompt, videoDataUri);
+        setGeneratedImages(prev => ({...prev, [scenarioKey]: imageDataUri}));
       } catch (e) {
         const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
         toast({
-          title: 'Video Generation Failed',
+          title: 'Image Generation Failed',
           description: errorMessage,
           variant: 'destructive',
         });
       } finally {
-        setGeneratingVideo(null);
+        setGeneratingImage(null);
       }
     });
   }
@@ -187,8 +178,8 @@ export function AnalysisDashboard() {
             className="hidden"
           />
           <Button onClick={handleAnalyzeClick} disabled={isPending || !videoFile} className="w-full">
-            {isPending && !generatingVideo ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-            {isPending && !generatingVideo ? 'Overthinking...' : 'Analyze My Day'}
+            {isPending && !generatingImage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+            {isPending && !generatingImage ? 'Overthinking...' : 'Analyze My Day'}
           </Button>
         </div>
       </Card>
@@ -211,6 +202,7 @@ export function AnalysisDashboard() {
               <CardTitle className="font-headline text-2xl">Could've Gone Better</CardTitle>
             </CardHeader>
             <CardContent>
+              <img src={analysis.couldHaveGoneBetterImage} alt="Could've gone better" className="w-full aspect-video object-cover rounded-md mb-4" />
               <p className="text-base">{analysis.couldHaveGoneBetter.main}</p>
               <Separator className="my-4" />
               <CardDescription className="italic">
@@ -226,6 +218,7 @@ export function AnalysisDashboard() {
               <CardTitle className="font-headline text-2xl">Went Well</CardTitle>
             </CardHeader>
             <CardContent>
+              <img src={analysis.wentWellImage} alt="Went well" className="w-full aspect-video object-cover rounded-md mb-4" />
               <p className="text-base">{analysis.wentWell.main}</p>
               <Separator className="my-4" />
               <CardDescription className="italic">
@@ -269,15 +262,15 @@ export function AnalysisDashboard() {
          <section className="w-full max-w-7xl mt-4 grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-500">
             <OverthinkingCard
                 scenario={analysis.overthinkingScenarios.scenario1}
-                onGenerate={() => handleGenerateVideo('scenario1')}
-                generatedVideo={generatedVideos.scenario1}
-                isGenerating={generatingVideo === 'scenario1'}
+                onGenerate={() => handleGenerateImage('scenario1')}
+                generatedImage={generatedImages.scenario1}
+                isGenerating={generatingImage === 'scenario1'}
                 />
             <OverthinkingCard
                 scenario={analysis.overthinkingScenarios.scenario2}
-                onGenerate={() => handleGenerateVideo('scenario2')}
-                generatedVideo={generatedVideos.scenario2}
-                isGenerating={generatingVideo === 'scenario2'}
+                onGenerate={() => handleGenerateImage('scenario2')}
+                generatedImage={generatedImages.scenario2}
+                isGenerating={generatingImage === 'scenario2'}
                 />
          </section>
       )}
