@@ -40,7 +40,11 @@ function OverthinkingCard({ scenario, onGenerate, generatedImage, isGenerating }
 }
 
 
-export function AnalysisDashboard() {
+interface AnalysisDashboardProps {
+  onAnalyzeStart?: () => void;
+}
+
+export function AnalysisDashboard({ onAnalyzeStart }: AnalysisDashboardProps) {
   const [analysis, setAnalysis] = useState<FullAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [betterViewed, setBetterViewed] = useState(false);
@@ -106,7 +110,13 @@ export function AnalysisDashboard() {
     resetState();
     setVideoDataUri(videoDataUri); // re-set it because resetState clears it
 
+    // Show "Overthinking..." for 12 seconds, then trigger hyperspace effect and analysis
     startTransition(async () => {
+      // 12 second delay to show "Overthinking..." text, then start hyperspace
+      await new Promise(resolve => setTimeout(resolve, 12000));
+      onAnalyzeStart?.();
+      
+      // Continue with the actual analysis after hyperspace starts
       try {
         const result = await getWittyAnalysisForVideo(videoDataUri);
         setAnalysis(result);
@@ -152,13 +162,13 @@ export function AnalysisDashboard() {
     <div className="w-full max-w-7xl mx-auto flex flex-col items-center gap-8">
       <header className="text-center">
         <h1 className="text-5xl md:text-6xl font-headline text-primary">Overthinking.ai</h1>
-        <p className="mt-2 text-lg text-muted-foreground">Turn your day into a witty breakdown.</p>
+        <p className="mt-2 text-lg text-muted-foreground">Generate good & bad scenarios for your video (:</p>
       </header>
 
-      <Card className="w-full max-w-lg p-6">
+      <Card className="w-full max-w-lg p-6 bg-black/20 backdrop-blur-sm border-white/20">
         <div className="flex flex-col items-center gap-4">
             <div
-                className="w-full h-48 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
+                className="w-full h-48 border-2 border-dashed border-white/30 bg-transparent rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-white/50 hover:bg-white/5 transition-all duration-300"
                 onClick={() => fileInputRef.current?.click()}
             >
                 {videoPreview ? (
@@ -178,8 +188,8 @@ export function AnalysisDashboard() {
             className="hidden"
           />
           <Button onClick={handleAnalyzeClick} disabled={isPending || !videoFile} className="w-full">
-            {isPending && !generatingImage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-            {isPending && !generatingImage ? 'Overthinking...' : 'Analyze My Day'}
+            {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isPending ? 'Overthinking...' : 'Analyze My Day'}
           </Button>
         </div>
       </Card>
@@ -196,7 +206,7 @@ export function AnalysisDashboard() {
         <section className="w-full max-w-7xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-500">
           <Card
             onClick={() => handleCardClick('worse')}
-            className={cn("cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105", worseViewed && "ring-2 ring-primary")}
+            className={cn("cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 bg-black/20 backdrop-blur-sm border-white/20", worseViewed && "ring-2 ring-primary")}
           >
             <CardHeader>
               <CardTitle className="font-headline text-2xl">Could've Gone Better</CardTitle>
@@ -212,7 +222,7 @@ export function AnalysisDashboard() {
           </Card>
           <Card
             onClick={() => handleCardClick('better')}
-            className={cn("cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105", betterViewed && "ring-2 ring-primary")}
+            className={cn("cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 bg-black/20 backdrop-blur-sm border-white/20", betterViewed && "ring-2 ring-primary")}
           >
             <CardHeader>
               <CardTitle className="font-headline text-2xl">Went Well</CardTitle>
@@ -228,7 +238,7 @@ export function AnalysisDashboard() {
           </Card>
           <div className="relative">
              <Card className={cn(
-                "transition-all duration-700 ease-in-out",
+                "transition-all duration-700 ease-in-out bg-black/20 backdrop-blur-sm border-white/20",
                 !isUnlocked && "blur-md opacity-60"
              )}>
                 <CardHeader>
