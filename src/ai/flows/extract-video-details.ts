@@ -15,10 +15,10 @@ const ExtractVideoDetailsInputSchema = z.object({
   videoDataUri: z
     .string()
     .describe(
-      "A video as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'." // Corrected the format description
+      "A video as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'" // Corrected the format description
     ),
 });
-export type ExtractVideoDetailsInput = z.infer<typeof ExtractVideoDetailsInputSchema>;
+type ExtractVideoDetailsInput = z.infer<typeof ExtractVideoDetailsInputSchema>;
 
 const ExtractVideoDetailsOutputSchema = z.object({
   eventsAndOutcomes: z.array(z.string()).describe('Key events and their outcomes extracted from the video. If no specific events are identifiable, provide a general summary of the video content.'),

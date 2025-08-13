@@ -13,7 +13,7 @@ import {z} from 'genkit';
 const GenerateWittyAnalysisInputSchema = z.object({
   eventDetails: z.string().describe('Extracted event details from the daily video.'),
 });
-export type GenerateWittyAnalysisInput = z.infer<typeof GenerateWittyAnalysisInputSchema>;
+type GenerateWittyAnalysisInput = z.infer<typeof GenerateWittyAnalysisInputSchema>;
 
 const AnalysisWithDevilsAdvocateSchema = z.object({
   main: z.string().describe('The primary analysis for a section.'),

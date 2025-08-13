@@ -11,15 +11,15 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
 
-export const GenerateVideoFromPromptInputSchema = z.object({
+const GenerateVideoFromPromptInputSchema = z.object({
   prompt: z.string().describe('The text prompt for the video generation.'),
 });
-export type GenerateVideoFromPromptInput = z.infer<typeof GenerateVideoFromPromptInputSchema>;
+type GenerateVideoFromPromptInput = z.infer<typeof GenerateVideoFromPromptInputSchema>;
 
-export const GenerateVideoFromPromptOutputSchema = z.object({
+const GenerateVideoFromPromptOutputSchema = z.object({
   videoDataUri: z.string().describe("The generated video as a data URI."),
 });
-export type GenerateVideoFromPromptOutput = z.infer<typeof GenerateVideoFromPromptOutputSchema>;
+type GenerateVideoFromPromptOutput = z.infer<typeof GenerateVideoFromPromptOutputSchema>;
 
 export async function generateVideoFromPrompt(input: GenerateVideoFromPromptInput): Promise<GenerateVideoFromPromptOutput> {
   return generateVideoFromPromptFlow(input);

@@ -21,7 +21,6 @@ const nextConfig: NextConfig = {
   httpAgentOptions: {
     // Increase timeout for video generation
     keepAlive: true,
-    timeout: 120000, // 2 minutes
   },
 };
 

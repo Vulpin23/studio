@@ -11,12 +11,12 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-export const GenerateOverthinkingScenariosInputSchema = z.object({
+const GenerateOverthinkingScenariosInputSchema = z.object({
   eventDetails: z.string().describe('The key events from the video.'),
 });
-export type GenerateOverthinkingScenariosInput = z.infer<typeof GenerateOverthinkingScenariosInputSchema>;
+type GenerateOverthinkingScenariosInput = z.infer<typeof GenerateOverthinkingScenariosInputSchema>;
 
-export const GenerateOverthinkingScenariosOutputSchema = z.object({
+const GenerateOverthinkingScenariosOutputSchema = z.object({
   scenario1: z.string().describe("A wild, imaginative, and funny 'what if' scenario based on the events."),
   scenario2: z.string().describe("Another wild, imaginative, and funny 'what if' scenario based on the events."),
 });
