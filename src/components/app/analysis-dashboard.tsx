@@ -12,7 +12,11 @@ import type { GenerateWittyAnalysisOutput } from '@/ai/flows/generate-witty-anal
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-export function AnalysisDashboard() {
+interface AnalysisDashboardProps {
+  onAnalyzeStart?: () => void;
+}
+
+export function AnalysisDashboard({ onAnalyzeStart }: AnalysisDashboardProps) {
   const [analysis, setAnalysis] = useState<GenerateWittyAnalysisOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [betterViewed, setBetterViewed] = useState(false);
@@ -48,49 +52,22 @@ export function AnalysisDashboard() {
   };
   
   const handleAnalyzeClick = () => {
-    if (!videoFile) {
-      toast({
-        title: 'No video selected',
-        description: 'Please select a video file to analyze.',
-        variant: 'destructive',
-      });
-      return;
-    }
+    // Temporarily disabled video requirement for testing animation
+    // if (!videoFile) {
+    //   toast({
+    //     title: 'No video selected',
+    //     description: 'Please select a video file to analyze.',
+    //     variant: 'destructive',
+    //   });
+    //   return;
+    // }
 
     setError(null);
+    
+    // Trigger hyperspace effect
+    onAnalyzeStart?.();
 
-    startTransition(async () => {
-      try {
-        const reader = new FileReader();
-        reader.readAsDataURL(videoFile);
-        reader.onloadend = async () => {
-          const base64data = reader.result as string;
-          try {
-            const result = await getWittyAnalysisForVideo(base64data);
-            setAnalysis(result);
-          } catch(e) {
-             const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
-            setError(errorMessage);
-            toast({
-              title: 'Analysis Failed',
-              description: errorMessage,
-              variant: 'destructive',
-            });
-          }
-        };
-        reader.onerror = () => {
-          throw new Error('Failed to read video file.');
-        };
-      } catch (e) {
-        const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
-        setError(errorMessage);
-        toast({
-          title: 'Analysis Failed',
-          description: errorMessage,
-          variant: 'destructive',
-        });
-      }
-    });
+    // Skip actual analysis for animation demo
   };
 
   const handleCardClick = (card: 'better' | 'worse') => {
@@ -102,13 +79,13 @@ export function AnalysisDashboard() {
     <div className="w-full max-w-6xl mx-auto flex flex-col items-center gap-8">
       <header className="text-center">
         <h1 className="text-5xl md:text-6xl font-headline text-primary">Overthinking.ai</h1>
-        <p className="mt-2 text-lg text-muted-foreground">Turn your day into a witty breakdown.</p>
+        <p className="mt-2 text-lg text-muted-foreground">Generate good & bad scenarios for your video (:</p>
       </header>
 
-      <Card className="w-full max-w-lg p-6">
+      <Card className="w-full max-w-lg p-6 bg-black/20 backdrop-blur-sm border-white/20">
         <div className="flex flex-col items-center gap-4">
             <div
-                className="w-full h-48 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
+                className="w-full h-48 border-2 border-dashed border-white/30 bg-transparent rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-white/50 hover:bg-white/5 transition-all duration-300"
                 onClick={() => fileInputRef.current?.click()}
             >
                 {videoPreview ? (
@@ -127,26 +104,20 @@ export function AnalysisDashboard() {
             onChange={handleFileChange}
             className="hidden"
           />
-          <Button onClick={handleAnalyzeClick} disabled={isPending || !videoFile} className="w-full">
-            {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+          <Button onClick={handleAnalyzeClick} disabled={isPending} className="w-full">
+            {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {isPending ? 'Overthinking...' : 'Analyze My Day'}
           </Button>
         </div>
       </Card>
 
-      {error && !isPending && (
-        <Alert variant="destructive" className="w-full max-w-4xl">
-            <Info className="h-4 w-4" />
-          <AlertTitle>Oops! Something went wrong.</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+
 
       {analysis && (
         <section className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in duration-500">
           <Card
             onClick={() => handleCardClick('worse')}
-            className={cn("cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105", worseViewed && "ring-2 ring-primary")}
+            className={cn("cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 bg-black/20 backdrop-blur-sm border-white/20", worseViewed && "ring-2 ring-primary")}
           >
             <CardHeader>
               <CardTitle className="font-headline text-2xl flex items-center gap-2">Could've Gone Better</CardTitle>
@@ -157,7 +128,7 @@ export function AnalysisDashboard() {
           </Card>
           <Card
             onClick={() => handleCardClick('better')}
-            className={cn("cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105", betterViewed && "ring-2 ring-primary")}
+            className={cn("cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 bg-black/20 backdrop-blur-sm border-white/20", betterViewed && "ring-2 ring-primary")}
           >
             <CardHeader>
               <CardTitle className="font-headline text-2xl flex items-center gap-2">Went Well</CardTitle>
@@ -168,7 +139,7 @@ export function AnalysisDashboard() {
           </Card>
           <div className="relative">
              <Card className={cn(
-                "transition-all duration-700 ease-in-out",
+                "transition-all duration-700 ease-in-out bg-black/20 backdrop-blur-sm border-white/20",
                 !isUnlocked && "blur-md opacity-60"
              )}>
                 <CardHeader>
