@@ -36,7 +36,7 @@ const generateImageFromPromptFlow = ai.defineFlow(
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
       prompt: [
         { media: { url: videoDataUri } },
-        { text: `Generate an image that represents: "${prompt}"` },
+        { text: `Using the people and context from the provided video, generate an image that vividly represents the following scenario: "${prompt}"` },
       ],
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
